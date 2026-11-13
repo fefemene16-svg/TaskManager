@@ -1,0 +1,40 @@
+from flask import Flask, render_template, request, redirect
+import sqlite3
+
+app = Flask(__name__)
+
+def conectar():
+    return sqlite3.connect("tarefas.db")
+
+@app.route("/")
+def inicio():
+    db = conectar()
+    tarefas = db.execute(
+        "SELECT id, nome FROM tarefas"
+    ).fetchall()
+    db.close()
+    return render_template("index.html", tarefas=tarefas)
+
+@app.route("/adicionar", methods=["POST"])
+def adicionar():
+    nome = request.form["nome"]
+    db = conectar()
+    db.execute(
+        "INSERT INTO tarefas (nome) VALUES (?)",
+        (nome,)
+    )
+    db.commit()
+    db.close()
+    return redirect("/")
+
+if __name__ == "__main__":
+    db = conectar()
+    db.execute("""
+        CREATE TABLE IF NOT EXISTS tarefas (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nome TEXT NOT NULL
+        )
+    """)
+    db.commit()
+    db.close()
+    app.run(debug=True)
